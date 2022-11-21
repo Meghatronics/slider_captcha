@@ -84,7 +84,9 @@ class _SliderCaptchaState extends State<SliderCaptcha>
         children: [
           Flexible(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(widget.borderImager),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(widget.borderImager),
+              ),
               child: TestSliderCaptChar(
                 widget.image,
                 _offsetMove,
@@ -99,15 +101,8 @@ class _SliderCaptchaState extends State<SliderCaptcha>
             height: heightSliderBar,
             width: double.infinity,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
               color: widget.colorBar,
-              boxShadow: const <BoxShadow>[
-                BoxShadow(
-                  offset: Offset(0, 0),
-                  blurRadius: 2,
-                  color: Colors.grey,
-                )
-              ],
             ),
             child: Stack(
               children: <Widget>[
