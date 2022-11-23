@@ -19,11 +19,11 @@ class SliderCaptchaController extends ValueNotifier<double> {
   double get answerY => _answerOnCrossAxis ?? 0;
   SliderController get sliderController => _sliderController;
 
-  void _initialise() {
+  void _initialise() async {
+    await Future.delayed(Duration(milliseconds: 150));
     final offset = sliderController.create();
     _answer = offset?.dx ?? 0;
     _answerOnCrossAxis = offset?.dy ?? 0;
-    notifyListeners();
   }
 
   void reset() {
@@ -173,8 +173,7 @@ class SliderCaptchaButton extends StatelessWidget {
     final slider = this.slider ??
         Container(
           height: thumbSize,
-          // width: double.infinity,
-          decoration: BoxDecoration(
+           decoration: BoxDecoration(
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
             color: sliderColor,
           ),
