@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../pizzule_path.dart';
+import 'slider_captcha_components.dart';
 
 class SliderController {
   late Offset? Function() create;
@@ -11,35 +12,36 @@ class SliderController {
 
 class SliderCaptcha extends StatefulWidget {
   const SliderCaptcha({
-    required this.image,
-    required this.onConfirm,
-    this.title = 'Slide to authenticate',
-    this.titleStyle,
-    this.captchaSize = 30,
-    this.colorBar = Colors.red,
-    this.colorCaptChar = Colors.blue,
-    this.controller,
-    this.borderImager = 0,
-    this.imageToBarPadding = 0,
     Key? key,
-  })  : assert(0 <= borderImager && borderImager <= 5),
+    required this.image,
+    this.onConfirm,
+    this.controller,
+    this.label = 'Slide to authenticate',
+    this.labelStyle,
+    this.sliderColor = Colors.red,
+    this.puzzleColor = Colors.blue,
+    // this.captchaSize,
+    this.imageToBarPadding = 0,
+    this.borderImager = 0,
+  })  : assert(!(onConfirm == null && controller == null),
+            'Must provide one of either controller or onConfirm'),
+        assert((onConfirm != null) ^ (controller != null),
+            'Cannot provide both controller and onConfirm callback.'),
         super(key: key);
 
   final Image image;
 
+  final SliderCaptchaController? controller;
+
   final Future<void> Function(bool value)? onConfirm;
 
-  final String title;
+  final String label;
 
-  final TextStyle? titleStyle;
+  final TextStyle? labelStyle;
 
-  final Color colorBar;
+  final Color sliderColor;
 
-  final Color colorCaptChar;
-
-  final double captchaSize;
-
-  final SliderController? controller;
+  final Color puzzleColor;
 
   /// Adds space between the captcha image and the slide button bar.
   /// Defaults is 0
@@ -52,216 +54,40 @@ class SliderCaptcha extends StatefulWidget {
   State<SliderCaptcha> createState() => _SliderCaptchaState();
 }
 
-class _SliderCaptchaState extends State<SliderCaptcha>
-    with SingleTickerProviderStateMixin {
-  double heightSliderBar = 50;
-
-  double _offsetMove = 0;
-
-  double answerX = 0;
-
-  double answerY = 0;
-
-  /// Khi [confirm] đang thực thiện thì lock =true -> Không cho controller trược
-  /// nữa
-  bool isLock = false;
-
-  late SliderController controller;
-  late final SliderController _controller = SliderController();
-
-  late Animation<double> animation;
-
-  late AnimationController animationController;
+class _SliderCaptchaState extends State<SliderCaptcha> {
+  late SliderCaptchaController _controller;
+  @override
+  void initState() {
+    _controller =
+        widget.controller ?? SliderCaptchaController(widget.onConfirm!);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 500),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(widget.borderImager),
-              child: TestSliderCaptChar(
-                widget.image,
-                _offsetMove,
-                answerY,
-                colorCaptChar: widget.colorCaptChar,
-                sliderController: _controller,
-              ),
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SliderCaptchaPuzzle(
+            controller: _controller,
+            image: widget.image,
+            puzzleColor: widget.puzzleColor,
+            borderRadius: BorderRadius.circular(widget.borderImager),
           ),
-          SizedBox(height: widget.imageToBarPadding),
-          Container(
-            height: heightSliderBar,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: widget.colorBar,
-              boxShadow: const <BoxShadow>[
-                BoxShadow(
-                  offset: Offset(0, 0),
-                  blurRadius: 2,
-                  color: Colors.grey,
-                )
-              ],
-            ),
-            child: Stack(
-              children: <Widget>[
-                Center(
-                  child: Text(
-                    widget.title,
-                    style: widget.titleStyle,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Positioned(
-                  left: _offsetMove,
-                  top: 0,
-                  height: 50,
-                  width: 50,
-                  child: GestureDetector(
-                    onHorizontalDragStart: (detail) =>
-                        _onDragStart(context, detail),
-                    onHorizontalDragUpdate: (DragUpdateDetails detail) {
-                      _onDragUpdate(context, detail);
-                    },
-                    onHorizontalDragEnd: (DragEndDetails detail) {
-                      checkAnswer();
-                    },
-                    child: Container(
-                      height: heightSliderBar,
-                      width: heightSliderBar,
-                      margin: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        color: Colors.white,
-                        boxShadow: const <BoxShadow>[
-                          BoxShadow(color: Colors.grey, blurRadius: 4)
-                        ],
-                      ),
-                      child: const Icon(Icons.arrow_forward_rounded),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
+        ),
+        SizedBox(height: widget.imageToBarPadding),
+        SliderCaptchaButton(
+          controller: _controller,
+          sliderColor: widget.sliderColor,
+          thumbSize: 50,
+          label: widget.label,
+          labelStyle: widget.labelStyle,
+        ),
+      ],
     );
-  }
-
-  void _onDragStart(BuildContext context, DragStartDetails start) {
-    if (isLock) return;
-    RenderBox getBox = context.findRenderObject() as RenderBox;
-
-    var local = getBox.globalToLocal(start.globalPosition);
-
-    setState(() {
-      _offsetMove = local.dx - heightSliderBar / 2;
-    });
-  }
-
-  _onDragUpdate(BuildContext context, DragUpdateDetails update) {
-    if (isLock) return;
-    RenderBox getBox = context.findRenderObject() as RenderBox;
-    var local = getBox.globalToLocal(update.globalPosition);
-
-    if (local.dx < 0) {
-      _offsetMove = 0;
-      setState(() {});
-      return;
-    }
-
-    if (local.dx > getBox.size.width) {
-      _offsetMove = getBox.size.width - heightSliderBar;
-      setState(() {});
-      return;
-    }
-
-    setState(() {
-      _offsetMove = local.dx - heightSliderBar / 2;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.controller == null) {
-      controller = SliderController();
-    } else {
-      controller = widget.controller!;
-    }
-
-    controller.create = create;
-
-    animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-
-    animation = Tween<double>(begin: 1, end: 0).animate(animationController)
-      ..addListener(() {
-        setState(() {
-          _offsetMove = _offsetMove * animation.value;
-        });
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          animationController.reset();
-        }
-      });
-  }
-
-  @override
-  void dispose() {
-    animationController.dispose();
-    super.dispose();
-  }
-
-  WidgetsBinding? _widgetsBinding() => WidgetsBinding.instance;
-
-  @override
-  void didChangeDependencies() {
-    _widgetsBinding()?.addPostFrameCallback((timeStamp) {
-      controller.create.call();
-    });
-    super.didChangeDependencies();
-  }
-
-  void onUpdate(double d) {
-    setState(() {
-      _offsetMove = d;
-    });
-  }
-
-  Future<void> checkAnswer() async {
-    if (isLock) return;
-    isLock = true;
-
-    if (_offsetMove < answerX + 10 && _offsetMove > answerX - 10) {
-      await widget.onConfirm?.call(true);
-    } else {
-      await widget.onConfirm?.call(false);
-    }
-    isLock = false;
-  }
-
-  Offset? create() {
-    animationController.forward().then((value) {
-      Offset? offset = _controller.create.call();
-      answerX = offset?.dx ?? 0;
-      answerY = offset?.dy ?? 0;
-    });
-    return null;
   }
 }
-
-typedef SliderCreate = Offset? Function();
 
 class TestSliderCaptChar extends SingleChildRenderObjectWidget {
   ///Hình ảnh góc
