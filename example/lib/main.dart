@@ -29,8 +29,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final SliderController controller = SliderController();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,18 +37,18 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 50),
           child: SliderCaptcha(
-            controller: controller,
+            // controller: controller,
             image: Image.asset(
               'assets/image.jpeg',
               fit: BoxFit.fitWidth,
             ),
-            colorBar: Colors.blue,
-            colorCaptChar: Colors.blue,
+            sliderColor: Colors.blue,
+            puzzleColor: Colors.blue,
             onConfirm: (value) async {
               debugPrint(value.toString());
               return await Future.delayed(const Duration(seconds: 5)).then(
                 (value) {
-                  controller.create.call();
+                  // controller.create.call();
                 },
               );
             },
